@@ -1,0 +1,70 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Configuration;
+using System.Data.SqlClient;
+using System.Data;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using System.Runtime.Remoting.Messaging;
+
+namespace web_app_assigment_4
+{
+    public partial class GetRAByInstitution : System.Web.UI.Page
+    {
+
+        public DataTable GetDataFromDatabase()
+        {
+            DataTable dt = new DataTable();
+
+            string connString = ConfigurationManager.ConnectionStrings["CitizensScienceDB"].ToString();
+            string idValue = Request.QueryString["InstitutionID"];
+
+
+            //looking for the parameters
+            if (!string.IsNullOrEmpty(idValue))
+            {
+                using (SqlConnection conn = new SqlConnection(connString))
+                {
+                    conn.Open();
+
+                    // Use a  query 
+                    string query = "EXEC spGetAllResearchAreasByInstitutionID @Institutionid";
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    {
+                        cmd.Parameters.AddWithValue("Institutionid", idValue);
+                        cmd.ExecuteNonQuery();
+                        using (SqlDataAdapter da = new SqlDataAdapter(cmd))
+                        {
+                            da.Fill(dt);
+                        }
+                    }
+                }
+            }
+            else //if not parameters then query to get all research areas
+            {
+                using (SqlConnection conn = new SqlConnection(connString))
+                {
+                    conn.Open();
+                    string query = "Exec spGetAllResearchAreas";
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    {
+                        using (SqlDataAdapter da = new SqlDataAdapter(cmd))
+                        {
+                            da.Fill(dt);
+                        }
+
+                    }
+
+                }
+            }
+            return dt;
+        }
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            ResearchAreasTable.DataSource = GetDataFromDatabase();
+            ResearchAreasTable.DataBind();
+        }
+    }
+}   
